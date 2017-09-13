@@ -1,2 +1,2 @@
 # stickyjwm
-A tiling window using wmctrl by win + arrow
+A shortcut to make tiling window using wmctrl by win + arrow
