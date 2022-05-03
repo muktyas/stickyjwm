@@ -1,0 +1,313 @@
+#!/bin/bash
+
+# 220321 partition screen into three height (h1 and h2 line as border)
+#        and three width (w1 and w2 line as border)
+
+wd=`echo /tmp$HOME/.stickyjwm`
+#echo "$wd"
+#rm -r "$wd"
+mkdir -p "$wd"
+
+case "$1" in
+	-h|--help) echo ' usage:
+	-up 	: snap to top monitor
+	-left 	: snap to left monitor
+	-down 	: snap to bottom monitor
+	-right 	: snap to right monitor'
+esac
+
+margin_top=0
+margin_left=0
+margin_bottom=30
+margin_right=0
+
+# list all active monitors and sort it by x coordinate
+xrandr --listactivemonitors|grep x|awk -F '[ +x/]' '{print $4,$5-'$margin_left'-'$margin_right',$7-'$margin_top'-'$margin_bottom',$9+'$margin_left',$10+'$margin_top'}'|sed 's/*//g'|sort -k4,4n > "$wd"/monitors-active
+
+# debug
+# name	w	h	x	y of monitor
+#	0	1	2	3	4
+
+
+
+## Get window position information
+if [ ! -d "$wd"/info ];then mkdir -p "$wd"/info; fi
+id_window=$(xprop -root|awk '/_NET_ACTIVE_WINDOW\(WINDOW\)/{print $NF}')
+xwininfo -id $id_window>"$wd"/info/$id_window
+w_window=`awk '/Width/{print $2}' "$wd"/info/$id_window`
+h_window=`awk '/Height/{print $2}' "$wd"/info/$id_window`
+x_window=`awk '/Absolute upper-left X/{print $4}' "$wd"/info/$id_window`
+y_window=`awk '/Absolute upper-left Y/{print $4}' "$wd"/info/$id_window`
+border=`awk '/Relative upper-left X/{print $4}' "$wd"/info/$id_window`
+title=`awk '/Relative upper-left Y/{print $4}' "$wd"/info/$id_window`
+
+# got the center coordinate of window
+cx_window=$(( $x_window + $w_window / 2 ))
+cy_window=$(( $y_window + $h_window / 2 ))
+
+
+# check if there is a config file for this window.
+if [ ! -f "$wd/$id_window" ];then		#if not found, then make it!
+
+
+	while read line;do
+		mntr=($line)
+		
+		#echo "${mntr[@]}"
+		
+		w_plus_x=$(( ${mntr[1]} + ${mntr[3]} ))
+		#echo w_plus_x = "$w_plus_x"
+
+		#echo "$x_window" "$w_plus_x"
+		if [ "$x_window" -lt "$w_plus_x" ];then
+			#echo "the window is on ${mntr[0]}"
+			current=(${mntr[@]})
+			echo "${current[@]}" > "$wd/$id_window"
+			break
+		#else
+			#echo "the window is on the right of $mntr"
+		fi
+	done < "$wd"/monitors-active
+
+else
+	#echo "take from config file in $wd/$id_window"
+	current=(`cat $wd/$id_window`)
+fi
+#echo "Selesai"
+#echo current monitor: "${current[@]}"
+echo
+
+# set the margin into current monitor config
+#current[1]=$(( ${current[1]} - $margin_left - $margin_right ))
+#current[2]=$(( ${current[2]} - $margin_top - $margin_bottom ))
+#current[3]=$(( ${current[3]} + $margin_left ))
+#current[4]=$(( ${current[4]} + $margin_top ))
+
+goto_left_monitor(){
+	left=(`grep -B 1 "${current[0]}" "$wd"/monitors-active|grep -v "${current[0]}"`)
+	if [ ${#left[@]} -eq 0 ];then left=(`tail -1 "$wd"/monitors-active`); fi
+	echo ${left[@]} > "$wd/$id_window"
+	current=(${left[@]})
+}
+
+goto_right_monitor(){
+	right=(`grep -A 1 "${current[0]}" "$wd"/monitors-active|grep -v "${current[0]}"`)
+	if [ ${#right[@]} -eq 0 ];then right=(`head -1 "$wd"/monitors-active`); fi
+	echo ${right[@]} > "$wd/$id_window"
+	current=(${right[@]})
+}
+
+
+
+# position window on monitor
+# 1 | 2 | 3
+#----------- h1
+# 4 | 5 | 6
+#----------- h2
+# 7 | 8 | 9
+#   w1  w2
+
+
+w1=$(( ${current[3]} + ${current[1]} / 3 ))
+w2=$(( ${current[3]} + ${current[1]} / 3 * 2))
+h1=$(( ${current[4]} + ${current[2]} / 3 ))
+h2=$(( ${current[4]} + ${current[2]} / 3 * 2))
+
+echo cx:$cx_window, w: $w1, $w2, $(( ${current[1]} + ${current[3]} ))
+echo cy:$cy_window, h: $h1, $h2, $(( ${current[2]} + ${current[4]} ))
+
+
+
+
+
+# result
+pos1(){
+	x=${current[3]}
+	y=${current[4]}
+	w=$(( ${current[1]} / 2 ))
+	h=$(( ${current[2]} / 2 ))
+	echo pos1 on ${current[0]}
+}
+
+pos2(){
+	x=${current[3]}
+	y=${current[4]}
+	w=${current[1]}
+	h=$(( ${current[2]} / 2 ))
+	echo pos2 on ${current[0]}
+}
+
+pos3(){
+	x=$(( ${current[3]} + ${current[1]} / 2 ))
+	y=${current[4]}
+	w=$(( ${current[1]} / 2 ))
+	h=$(( ${current[2]} / 2 ))
+	echo pos3 on ${current[0]}
+}
+
+pos4(){
+	x=${current[3]}
+	y=${current[4]}
+	w=$(( ${current[1]} / 2 ))
+	h=${current[2]}
+	echo pos4 on ${current[0]}
+}
+
+pos5(){
+	x=${current[3]}
+	y=${current[4]}
+	w=${current[1]}
+	h=${current[2]}
+	echo pos5 on ${current[0]}
+}
+
+pos6(){
+	x=$(( ${current[3]} + ${current[1]} / 2 ))
+	y=${current[4]}
+	w=$(( ${current[1]} / 2 ))
+	h=${current[2]}
+	echo pos6 on ${current[0]}
+}
+
+pos7(){
+	x=${current[3]}
+	y=$(( ${current[4]} + ${current[2]} / 2 ))
+	w=$(( ${current[1]} / 2 ))
+	h=$(( ${current[2]} / 2 ))
+	echo pos7 on ${current[0]}
+}
+
+pos8(){
+	x=${current[3]}
+	y=$(( ${current[4]} + ${current[2]} / 2 ))
+	w=${current[1]}
+	h=$(( ${current[2]} / 2 ))
+	echo pos8 on ${current[0]}
+}
+
+pos9(){
+	x=$(( ${current[3]} + ${current[1]} / 2 ))
+	y=$(( ${current[4]} + ${current[2]} / 2 ))
+	w=$(( ${current[1]} / 2 ))
+	h=$(( ${current[2]} / 2 ))
+	echo pos9 on ${current[0]}
+}
+
+center(){
+	margin=150
+	x=$(( ${current[3]} + $margin ))
+	y=$(( ${current[4]} + $margin / 2 ))
+	w=$(( ${current[1]} - 2 * $margin ))
+	h=$(( ${current[2]} - $margin ))
+	echo center on ${current[0]}
+}
+
+
+
+
+# check, where is this window position (1 - 9)
+if [ $cy_window -lt $h1 ];then
+	echo top of h1: 1, 2, 3
+	if [ $cx_window -lt $w1 ];then
+		echo 1
+		case $1 in
+			-up) goto_left_monitor; pos7;;
+			-right) pos2;;
+			-down) pos4;;
+			-left) goto_left_monitor; pos3;;
+			*) pos2;;
+		esac
+	elif [ $cx_window -lt $w2 ];then
+		echo 2
+		case $1 in
+			-up) pos5;;
+			-right) pos3;;
+			-down) center;;
+			-left) pos1;;
+			*) pos3;;
+		esac
+	else
+		echo 3
+		case $1 in
+			-up) goto_left_monitor; pos9;;
+			-right) goto_right_monitor; pos1;;
+			-down) pos6;;
+			-left) pos2;;
+			*) goto_right_monitor; pos1;;
+		esac
+	fi
+	
+elif [ $cy_window -lt $h2 ];then
+	echo between h1 and h2: 4, 5, 6
+	if [ $cx_window -lt $w1 ];then
+		echo 4
+		case $1 in
+			-up) pos1;;
+			-right) center;;
+			-down) pos7;;
+			-left) goto_left_monitor; pos6;;
+			*) center;;
+		esac
+	elif [ $cx_window -lt $w2 ];then
+		echo 5
+		case $1 in
+			-up) pos2;;
+			-right) pos6;;
+			-down) pos8;;
+			-left) pos4;;
+			*) pos6;;
+		esac
+	else
+		echo 6
+		case $1 in
+			-up) pos3;;
+			-right) goto_right_monitor; pos4;;
+			-down) pos9;;
+			-left) center;;
+			*) goto_right_monitor; pos4;;
+		esac
+	fi
+else
+	echo bottom of h2: 7, 8, 9
+	if [ $cx_window -lt $w1 ];then
+		echo 7
+		case $1 in
+			-up) pos4;;
+			-right) pos8;;
+			-down) goto_right_monitor; pos1;;
+			-left) goto_left_monitor; pos9;;
+			*) pos8;;
+		esac
+	elif [ $cx_window -lt $w2 ];then
+		echo 8
+		case $1 in
+			-up) center;;
+			-right) pos9;;
+			-down) goto_right_monitor; pos2;;
+			-left) pos7;;
+			*) pos9;;
+		esac
+	else
+		echo 9
+		case $1 in
+			-up) pos6;;
+			-right) goto_right_monitor; pos7;;
+			-down) goto_right_monitor; pos3;;
+			-left) pos8;;
+			*) goto_right_monitor; pos7;;
+		esac
+	fi
+fi
+
+
+
+# set up for border and decoration
+w=$(( $w - 2*$border ))
+h=$(( $h - $title - $border ))
+echo x,y,w,h now
+echo $x,$y,$w,$h
+
+
+# run twice to make terminal better place
+wmctrl -r :ACTIVE: -e 0,$x,$y,$w,$h
+wmctrl -r :ACTIVE: -e 1,$x,$y,$w,$h
