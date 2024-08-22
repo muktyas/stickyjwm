@@ -16,10 +16,13 @@ case "$1" in
 	-right 	: snap to right monitor'
 esac
 
-margin_top=0
-margin_left=0
-margin_bottom=0
-margin_right=0
+panel_height=24
+gap=4
+
+margin_top=$((panel_height + gap))
+margin_left=$gap
+margin_bottom=$gap
+margin_right=$gap
 
 # list all active monitors and sort it by x coordinate
 xrandr --listactivemonitors|grep x|awk -F '[ +x/]' '{print $4,$5-'$margin_left'-'$margin_right',$7-'$margin_top'-'$margin_bottom',$9+'$margin_left',$10+'$margin_top'}'|sed 's/*//g'|sort -k4,4n > "$wd"/monitors-active
@@ -309,5 +312,6 @@ echo $x,$y,$w,$h
 
 
 # run twice to make terminal better place
+wmctrl -r :ACTIVE: -b remove,maximized_vert,maximized_horz
 wmctrl -r :ACTIVE: -e 0,$x,$y,$w,$h
 wmctrl -r :ACTIVE: -e 1,$x,$y,$w,$h
