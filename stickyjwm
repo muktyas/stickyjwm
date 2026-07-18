@@ -2,6 +2,7 @@
 
 # 220321 partition screen into three height (h1 and h2 line as border)
 #        and three width (w1 and w2 line as border)
+# 260718 pos1,2,3 up maximized and pos 7,8,9 down do nothing, set margin_bottom to 25 
 
 wd=`echo /tmp$HOME/.stickyjwm`
 #echo "$wd"
@@ -18,7 +19,7 @@ esac
 
 margin_top=0
 margin_left=0
-margin_bottom=30
+margin_bottom=25
 margin_right=0
 
 # list all active monitors and sort it by x coordinate
@@ -211,7 +212,7 @@ if [ $cy_window -lt $h1 ];then
 	if [ $cx_window -lt $w1 ];then
 		echo 1
 		case $1 in
-			-up) goto_left_monitor; pos7;;
+			-up) pos5;;
 			-right) pos2;;
 			-down) pos4;;
 			-left) goto_left_monitor; pos3;;
@@ -229,7 +230,7 @@ if [ $cy_window -lt $h1 ];then
 	else
 		echo 3
 		case $1 in
-			-up) goto_left_monitor; pos9;;
+			-up) pos5;;
 			-right) goto_right_monitor; pos1;;
 			-down) pos6;;
 			-left) pos2;;
@@ -274,7 +275,7 @@ else
 		case $1 in
 			-up) pos4;;
 			-right) pos8;;
-			-down) goto_right_monitor; pos1;;
+			-down) exit;;
 			-left) goto_left_monitor; pos9;;
 			*) pos8;;
 		esac
@@ -283,7 +284,7 @@ else
 		case $1 in
 			-up) center;;
 			-right) pos9;;
-			-down) goto_right_monitor; pos2;;
+			-down) exit;;
 			-left) pos7;;
 			*) pos9;;
 		esac
@@ -292,7 +293,7 @@ else
 		case $1 in
 			-up) pos6;;
 			-right) goto_right_monitor; pos7;;
-			-down) goto_right_monitor; pos3;;
+			-down) exit;;
 			-left) pos8;;
 			*) goto_right_monitor; pos7;;
 		esac
